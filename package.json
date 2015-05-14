@@ -1,0 +1,37 @@
+{
+  "name": "mind-mirror3",
+  "version": "0.0.0",
+  "description": "My badass module",
+  "license": "MIT",
+  "repository": "CowboyJim/mind-mirror3",
+  "main": "./mindmirror3",  
+  "author": {
+    "name": "Jim Boone",
+    "email": "james.m.boone@gmail.com",
+    "url": "cowboyjim.com"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "maintainers": [
+    {
+      "name": "CowboyJim",
+      "email": "boone.jim@gmail.com"
+    }
+  ],
+  "files": [
+    "index.js"
+  ],
+  "keywords": [
+    ""
+  ],
+  "dependencies": {
+    "serialport": "^1.7.1"
+    },
+  "devDependencies": {
+    "mocha": "*"
+  }
+}
