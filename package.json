@@ -1,7 +1,7 @@
 {
   "name": "mind-mirror3",
-  "version": "0.0.0",
-  "description": "My badass module",
+  "version": "0.0.1",
+  "description": "Utilities for reading raw data from the Mind Mirror 3 device from Biometrics",
   "license": "MIT",
   "repository": "CowboyJim/mind-mirror3",
   "main": "./mindmirror3",  
