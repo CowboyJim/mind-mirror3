@@ -4,7 +4,7 @@
   "description": "Utilities for reading raw data from the Mind Mirror 3 device from Biometrics",
   "license": "MIT",
   "repository": "CowboyJim/mind-mirror3",
-  "main": "./mindmirror3",  
+  "main": "./mindmirror3",
   "author": {
     "name": "Jim Boone",
     "email": "james.m.boone@gmail.com",
@@ -29,8 +29,9 @@
     ""
   ],
   "dependencies": {
-    "serialport": "^1.7.1"
-    },
+    "serialport": "^1.7.1",
+    "winston": "^1.0.0"
+  },
   "devDependencies": {
     "mocha": "*"
   }
