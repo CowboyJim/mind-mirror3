@@ -55,33 +55,33 @@ var testData =
 describe('Parser tests', function () {
 	var file1Buffer;
 	var eventEmitter;
+	var counter = 0;
 
 	before(function () {
+		counter = 0;
 		file1Buffer = fs.readFileSync(testFile1);
 		eventEmitter = new EventEmitter();
 		eventEmitter.addListener('data',function(data){
-			console.log("event received: " + data.length);
-
+			//console.log("event received: " + data.length);
+			counter++;
 		});
 	});
 
 	describe('Find beginning of random stream', function (done) {
+		this.timeout(10000);
+
 		it('should return 11', function (done) {
 
 			var buffer = new Buffer(testData);
 
-			var parser = parsers.parser();
-			parser(eventEmitter, buffer);
+			var parser = parsers.parser(true)(eventEmitter, buffer);
+			console.log("Counter: " + counter);
+			//assert(counter == 15);
+
 			//done();
 
-			//var getSyncByteIndex = parsers.getSyncByteIndex(buffer);
-			//console.log(getSyncByteIndex);
-			//assert.equal(getSyncByteIndex, 11);
-			//getSyncByteIndex = parsers.getSyncByteIndex(buffer.slice(11));
-			//assert.equal(getSyncByteIndex, 27);
 		});
 	})
-
 
 });
 

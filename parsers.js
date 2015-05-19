@@ -1,5 +1,5 @@
 /**
- * Created by jim on 5/13/15.
+ * Created by CowboyJim on 5/13/15.
  * Copyright 2015 Jim Boone boone.jim@gmail.com
  */
 
@@ -10,8 +10,8 @@ var logger = require('winston');
 /* The MM3 starts each data byte with one of the following two bytes. The
  sync bytes toggle back and forth between valid packets
  */
-var syncBytes = [0x0A, 0x05];
-var currentSyncByte = undefined;
+var _gSyncBytes = [0x0A, 0x05];
+var _gCurrentSyncByte = undefined;
 
 function isUndefined(variable) {
 	if (typeof variable === 'undefined' || variable === null) {
@@ -26,7 +26,7 @@ function isUndefined(variable) {
  * @param buffer
  * @returns {number}
  */
-function indexOf(byte, buffer, offset) {
+function indexOf(buffer, offset, byte) {
 
 	var x = 0;
 
@@ -34,7 +34,9 @@ function indexOf(byte, buffer, offset) {
 		if (!isUndefined(offset)) {
 			x = offset;
 		}
-
+		if (isUndefined(byte)) {
+			byte = _gCurrentSyncByte;
+		}
 		for (x; x < buffer.length; x++) {
 			if (byte === buffer[x]) {
 				// the byte was found
@@ -49,14 +51,19 @@ function indexOf(byte, buffer, offset) {
 
 }
 
-
-/*
+/**
+ *
  Ensure that the sync byte isn't just a data byte;
  1) find the sync byte index
  2) read the next byte which is the packet size
  3) move to the end of the packet and make sure they next sync
  is the other sync byte
  4) If it is, then the sync byte index is valid. False otherwise
+ *
+ * @param index buffer index to start the validation
+ * @param buffer data buffer
+ * @param syncIndex index of the _gSyncBytes array used to determine the desired sync byte
+ * @returns {boolean} true if the index is indeed the beginning of a mm3 packet
  */
 function validSyncByte(index, buffer, syncIndex) {
 
@@ -66,7 +73,7 @@ function validSyncByte(index, buffer, syncIndex) {
 	var packetLength = buffer[index + 1];
 	var nextSyncByte = buffer[index + packetLength];
 
-	if (nextSyncByte === syncBytes[1 - syncIndex]) {
+	if (nextSyncByte === _gSyncBytes[1 - syncIndex]) {
 		return true;
 	} else {
 		return false;
@@ -75,23 +82,26 @@ function validSyncByte(index, buffer, syncIndex) {
 
 /**
  *
- * Returns the index of the next sync byte from the syncBytes array
+ * Returns the index of the next sync byte from the _gSyncBytes array
  *
  * @param buffer
  * @returns {Number} index of the sync byte for this data packet
  */
-function scanBuffer(buffer, lastSyncByte) {
+function nextSyncByteIndex(buffer) {
 
 	var index0_1 = -1, index1_1 = -1, index0_2 = -1, index1_2 = -1;
 	var byteIndex, syncByte;
 	var result = {};
 
-	if (isUndefined(lastSyncByte)) {
+	if (isUndefined(_gCurrentSyncByte)) {
 
-		index0_1 = indexOf(syncBytes[0], buffer);
-		index0_2 = indexOf(syncBytes[0], buffer, index0_1 + 1);
-		index1_1 = indexOf(syncBytes[1], buffer);
-		index1_2 = indexOf(syncBytes[1], buffer, index1_1 + 1);
+		index0_1 = indexOf(buffer, 0, _gSyncBytes[0]);
+
+		console.log(index0_1);
+
+		index0_2 = indexOf(buffer, index0_1 + 1, _gSyncBytes[0]);
+		index1_1 = indexOf(buffer, 0, _gSyncBytes[1]);
+		index1_2 = indexOf(buffer, index1_1 + 1, _gSyncBytes[1]);
 
 		var id0_1_valid = validSyncByte(index0_1, buffer, 0);
 		var id0_2_valid = validSyncByte(index0_2, buffer, 0);
@@ -115,52 +125,71 @@ function scanBuffer(buffer, lastSyncByte) {
 			logger.log('warn', "Could not find sync byte in stream");
 			throw new Error("Could not find sync byte in stream");
 		}
+		_gCurrentSyncByte = syncByte;
 		result = {index: byteIndex, syncByte: syncByte};
 	} else {
 
-		var nextSyncByte = (lastSyncByte === syncBytes[0]) ? syncBytes[1] : syncBytes[0];
-		var index0_1 = indexOf(nextSyncByte, buffer);
-		result = {index: index0_1 , syncByte: nextSyncByte};
+		_gCurrentSyncByte = (_gCurrentSyncByte === _gSyncBytes[0]) ? _gSyncBytes[1] : _gSyncBytes[0];
+
+		var index0_1 = indexOf(buffer);
+		result = {index: index0_1, syncByte: _gCurrentSyncByte};
 	}
 	return result;
 }
 
 
-function getDataPacket(buffer, offset, lastSyncByte) {
-	var scanResults = scanBuffer(buffer, lastSyncByte);
-	var x = indexOf(scanResults.syncByte, buffer, offset);
-	var packet = buffer.slice(x, buffer[x + 1]);
+function getComPacket(buffer) {
+	var scanResults = nextSyncByteIndex(buffer);
+	var x = indexOf(buffer, scanResults.index);
+	var packet = buffer.slice(x, x + buffer[x + 1]);
 
 	return {index: x, packet: packet, syncByte: scanResults.syncByte};
 }
 
-function parser() {
+/**
+ *
+ *
+ * @param isFileInput
+ * @returns {Function}
+ */
+function parser(isFileInput) {
 	return function (emitter, buffer) {
 
 		var buf = buffer.slice();
-		var bytesProcesssed = 0;
 		var bufLength = buf.length;
-		var lastSyncByte;
+		var packetResult;
+
+		var addSimulatedDelay = false;
+		if (isFileInput) {
+			addSimulatedDelay = isFileInput;
+		}
 
 		// Loop and keep emitting until done
-		while (bytesProcesssed < bufLength) {
+		while (buf.length > 0) {
 
-			var scanResult = getDataPacket(buf, bytesProcesssed, lastSyncByte);
+			packetResult = getComPacket(buf);
 
-			emitter.emit('data', scanResult.packet);
-			logger.log('debug', "Emitted data packet from buffer: Start index: " + scanResult.index + " packet length: " + scanResult.packet.length);
-			buf = buf.slice(scanResult.index + scanResult.packet.length);
-			bufLength = buf.length;
-			bytesProcesssed += scanResult.packet.length;
-			lastSyncByte = scanResult.syncByte;
+			if (addSimulatedDelay) {
+				setTimeout(function (packet) {
+					emitPacket(emitter, packet);
+				}, 500, packetResult);
+			} else {
+				emitPacket(emitter, packetResult);
+			}
+			buf = buf.slice(packetResult.index + packetResult.packet.length);
 		}
 		logger.log('debug', 'Done parsing buffer');
 	};
 }
 
+function emitPacket(emitter, packetResult) {
+	emitter.emit('data', packetResult.packet);
+	logger.log('debug', "Emitted data packet from buffer: Start index: " + packetResult.index + " packet length: " + packetResult.packet.length);
+}
+
 module.exports = {
 
-	scanBuffer: scanBuffer,
-	getDataPacket: getDataPacket,
+	nextSyncByteIndex: nextSyncByteIndex,
+	getComPacket: getComPacket,
 	parser: parser
 }
