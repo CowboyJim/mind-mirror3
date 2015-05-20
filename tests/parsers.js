@@ -3,7 +3,7 @@
  */
 
 'use strict';
-var assert = require("assert");
+var expect = require("chai").expect;
 var fs = require('fs');
 var parsers = require('../parsers');
 var EventEmitter = require('events').EventEmitter;
@@ -58,28 +58,29 @@ describe('Parser tests', function () {
 	var counter = 0;
 
 	before(function () {
-		counter = 0;
 		file1Buffer = fs.readFileSync(testFile1);
 		eventEmitter = new EventEmitter();
-		eventEmitter.addListener('data',function(data){
-			//console.log("event received: " + data.length);
-			counter++;
-		});
 	});
 
 	describe('Find beginning of random stream', function (done) {
-		this.timeout(10000);
+		it('should emit 16 packets', function (done) {
 
-		it('should return 11', function (done) {
+			eventEmitter.addListener('data', function (packet) {
+				//console.log("event received: " + packet.length());
+				counter++;
+				if (counter === 1) {
+					expect(packet.length()).to.equal(13);
+					expect(packet.isValid).to.be.false;
+				} else if (counter > 1 && counter < 16) {
+					expect(packet.length()).to.equal(39);
+					expect(packet.isValid).to.be.true;
+				} else {
+					done();
+				}
+			});
 
 			var buffer = new Buffer(testData);
-
 			var parser = parsers.parser(true)(eventEmitter, buffer);
-			console.log("Counter: " + counter);
-			//assert(counter == 15);
-
-			//done();
-
 		});
 	})
 

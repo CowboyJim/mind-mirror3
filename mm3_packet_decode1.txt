@@ -12,18 +12,19 @@
 05 27 93 04 00 04 00 00 00 03 1C 60 9A B3 CC E9 FF FF F1 D8 BF 9A 60 19 03 1C 60 9A B3 CC E9 FF FF F1 D8 BF 9A 60 19 
 
 
-split on 0x27 and remove from lin
 
-0 checksum [3]
-1 value of 0x04 [4]
-2 frame # [5]
-3 status [6]
-4 attenuation settings [7] no value
-5 timestamp lower[8] no value
-6 timestamp upper[9] no value
-7 left emg [10]
-8 - 22 left filters [11 - 25] 
-23  right emg [26] 
-24 - 36  right filters [26 - 40]
-37 - sync byte [1]
-38 - packet size
+Byte Index - Description
+
+0 - sync byte 
+1 - packet size
+2 - checksum 
+3 - value of 0x04 
+4 - frame # 
+5 - status 
+6 - attenuation settings - no value
+7 - timestamp lower - no value
+8 - timestamp upper - no value
+9 - left emg 
+10 - left filters [10 - 23] 
+24 - right emg
+24 - 38  right filters

@@ -6,6 +6,7 @@
 'use strict';
 
 var logger = require('winston');
+var Mm3Packet = require('./mm3_packet');
 
 /* The MM3 starts each data byte with one of the following two bytes. The
  sync bytes toggle back and forth between valid packets
@@ -96,9 +97,6 @@ function nextSyncByteIndex(buffer) {
 	if (isUndefined(_gCurrentSyncByte)) {
 
 		index0_1 = indexOf(buffer, 0, _gSyncBytes[0]);
-
-		console.log(index0_1);
-
 		index0_2 = indexOf(buffer, index0_1 + 1, _gSyncBytes[0]);
 		index1_1 = indexOf(buffer, 0, _gSyncBytes[1]);
 		index1_2 = indexOf(buffer, index1_1 + 1, _gSyncBytes[1]);
@@ -183,7 +181,7 @@ function parser(isFileInput) {
 }
 
 function emitPacket(emitter, packetResult) {
-	emitter.emit('data', packetResult.packet);
+	emitter.emit('data', new Mm3Packet(packetResult.packet));
 	logger.log('debug', "Emitted data packet from buffer: Start index: " + packetResult.index + " packet length: " + packetResult.packet.length);
 }
 

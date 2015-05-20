@@ -33,6 +33,7 @@
     "winston": "^1.0.0"
   },
   "devDependencies": {
+    "chai": "^2.3.0",
     "mocha": "*"
   }
 }
