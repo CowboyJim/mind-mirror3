@@ -20,7 +20,7 @@ var logger = require('winston');
  9 - left emg
  10 - left filters [10 - 23]
  24 - right emg
- 24 - 38  right filters
+ 25 - 38  right filters
  *
  *
  */
@@ -46,9 +46,9 @@ var MM3Packet = function (packet) {
 	this.isValid = true;
 
 	// Validate packet size
-	if (packet.length != packet[1]) {
+	if (packet.length !== packet[1]) {
 		logger.warn("Invalid packet! Expected packet size does not equal the actual packet size. Expected: "
-		+ packet.length + " found: " + packet.readInt8(1));
+		+ packet[1]  + " found: " + packet.length);
 		this.isValid = false;
 	}
 	//TODO  Validate checksum
@@ -60,10 +60,6 @@ var MM3Packet = function (packet) {
 MM3Packet.prototype.length = function () {
 	return this.packet.length;
 };
-
-//MM3Packet.prototype.isValid = function () {
-//	return this.isValid;
-//};
 
 /**
  *
@@ -97,7 +93,7 @@ MM3Packet.prototype.toString = function () {
 	var lbuff2 = this.packet.slice(l2start, r2start);
 	var rbuff2 = this.packet.slice(r2start, last);
 
-	var response = {
+	return {
 		size: this.packet.length,
 		top: displayFilterRange(this.packet, 0, l1start),
 		left_data_1: bufferToHex(lbuff1),
@@ -106,7 +102,6 @@ MM3Packet.prototype.toString = function () {
 		right_data_2: bufferToHex(rbuff2),
 		packet: displayFilterRange(this.packet, 0, this.packet.length)
 	};
-	return response;
 };
 
 /**
@@ -158,6 +153,15 @@ function decimalToHex(d, padding, base) {
 	return hex;
 }
 
+function toArrayBuffer(buffer) {
+	var ab = new ArrayBuffer(buffer.length);
+	var view = new Uint8Array(ab);
+	for (var i = 0; i < buffer.length; ++i) {
+		view[i] = buffer[i];
+	}
+	return ab;
+}
+
 /**
  *
  *
@@ -165,17 +169,11 @@ function decimalToHex(d, padding, base) {
  */
 MM3Packet.prototype.getAsBarGraphData = function () {
 
-	var leftdata = [];
-	var rightdata = [];
-	var x;
+	var leftdata = this.packet.slice(9,24);
+	var rightdata = this.packet.slice(24);
 
-	for (x = 0; x < 15; x++) {
-		leftdata.push([_gLabelValues[x], -50]);
-	}
-
-	for (x = 0; x < 15; x++) {
-		rightdata.push([_gLabelValues[x], 75]);
-	}
+//	var leftdata = toArrayBuffer(this.packet.slice(9,24));
+//	var rightdata = toArrayBuffer(this.packet.slice(24));
 
 	return [
 		{
@@ -190,5 +188,7 @@ MM3Packet.prototype.getAsBarGraphData = function () {
 		}
 	];
 };
+
+
 
 module.exports = MM3Packet;

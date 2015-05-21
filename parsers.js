@@ -15,10 +15,8 @@ var _gSyncBytes = [0x0A, 0x05];
 var _gCurrentSyncByte = undefined;
 
 function isUndefined(variable) {
-	if (typeof variable === 'undefined' || variable === null) {
-		return true;
-	}
-	return false;
+	return !!(typeof variable === 'undefined' || variable === null);
+
 }
 
 /** Returns the index of the byte of found in the buffer, -1 otherwise
@@ -74,11 +72,7 @@ function validSyncByte(index, buffer, syncIndex) {
 	var packetLength = buffer[index + 1];
 	var nextSyncByte = buffer[index + packetLength];
 
-	if (nextSyncByte === _gSyncBytes[1 - syncIndex]) {
-		return true;
-	} else {
-		return false;
-	}
+	return nextSyncByte === _gSyncBytes[1 - syncIndex];
 }
 
 /**
@@ -116,7 +110,7 @@ function nextSyncByteIndex(buffer) {
 			byteIndex = index1_1;
 			syncByte = 0x05;
 		} else if (id1_2_valid) {
-			byteIndex = index1_2
+			byteIndex = index1_2;
 			syncByte = 0x05;
 		}
 		else {
@@ -182,7 +176,7 @@ function parser(isFileInput) {
 
 function emitPacket(emitter, packetResult) {
 	emitter.emit('data', new Mm3Packet(packetResult.packet));
-	logger.log('debug', "Emitted data packet from buffer: Start index: " + packetResult.index + " packet length: " + packetResult.packet.length);
+	logger.log('debug', "Emitted mm3 packet - idx: " + packetResult.index + " len: " + packetResult.packet.length);
 }
 
 module.exports = {
@@ -190,4 +184,4 @@ module.exports = {
 	nextSyncByteIndex: nextSyncByteIndex,
 	getComPacket: getComPacket,
 	parser: parser
-}
+};

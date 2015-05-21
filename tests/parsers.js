@@ -8,6 +8,7 @@ var fs = require('fs');
 var parsers = require('../parsers');
 var EventEmitter = require('events').EventEmitter;
 var winston = require('winston');
+var Mm3Packet = require('../mm3_packet');
 
 winston.level = 'debug';
 
@@ -52,6 +53,10 @@ var testData =
 		0x00, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x05, 0x27, 0x40, 0x04, 0x07, 0x61];
 
 
+var singleDataPacket = [0x05, 0x27, 0x93, 0x04, 0x00, 0x04, 0x00, 0x00, 0x00, 0x03, 0x1C, 0x60, 0x9A,
+	0xB3, 0xCC, 0xE9, 0xFF, 0xFF, 0xF1, 0xD8, 0xBF, 0x9A, 0x60, 0x19, 0x03, 0x1C, 0x60, 0x9A, 0xB3,
+	0xCC, 0xE9, 0xFF, 0xFF, 0xF1, 0xD8, 0xBF, 0x9A, 0x60, 0x19];
+
 describe('Parser tests', function () {
 	var file1Buffer;
 	var eventEmitter;
@@ -70,7 +75,7 @@ describe('Parser tests', function () {
 				counter++;
 				if (counter === 1) {
 					expect(packet.length()).to.equal(13);
-					expect(packet.isValid).to.be.false;
+					expect(packet.isValid).to.be.true;
 				} else if (counter > 1 && counter < 16) {
 					expect(packet.length()).to.equal(39);
 					expect(packet.isValid).to.be.true;
@@ -82,7 +87,23 @@ describe('Parser tests', function () {
 			var buffer = new Buffer(testData);
 			var parser = parsers.parser(true)(eventEmitter, buffer);
 		});
-	})
+	});
+	describe('Single packet decode', function () {
+		it('should create JSON for plotting bar graphs', function () {
+
+			var packet = new Mm3Packet(new Buffer(singleDataPacket));
+			expect(packet.length()).to.equal(39);
+			expect(packet.isValid).to.be.true;
+
+			var graphData = packet.getAsBarGraphData();
+			expect(graphData[0].values).to.have.length(15);
+			expect(graphData[1].values).to.have.length(15);
+
+
+		});
+	});
+
+	//getAsBarGraphData
 
 });
 
