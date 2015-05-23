@@ -14,6 +14,8 @@ var Mm3Packet = require('./mm3_packet');
 var _gSyncBytes = [0x0A, 0x05];
 var _gCurrentSyncByte = undefined;
 
+var isFileInput = false;
+
 function isUndefined(variable) {
 	return !!(typeof variable === 'undefined' || variable === null);
 
@@ -138,6 +140,37 @@ function getComPacket(buffer) {
 	return {index: x, packet: packet, syncByte: scanResults.syncByte};
 }
 
+
+var parseData = function (emitter, buffer) {
+
+	console.log("buffer received");
+
+	var buf = buffer.slice();
+	var bufLength = buf.length;
+	var packetResult;
+
+	var addSimulatedDelay = false;
+	if (isFileInput) {
+		addSimulatedDelay = isFileInput;
+	}
+
+	// Loop and keep emitting until done
+	while (buf.length > 0) {
+
+		packetResult = getComPacket(buf);
+
+		if (addSimulatedDelay) {
+			setTimeout(function (packet) {
+				emitPacket(emitter, packet);
+			}, 500, packetResult);
+		} else {
+			emitPacket(emitter, packetResult);
+		}
+		buf = buf.slice(packetResult.index + packetResult.packet.length);
+	}
+	logger.log('debug', 'Done parsing buffer');
+};
+
 /**
  *
  *
@@ -145,33 +178,8 @@ function getComPacket(buffer) {
  * @returns {Function}
  */
 function parser(isFileInput) {
-	return function (emitter, buffer) {
+	return parseData;
 
-		var buf = buffer.slice();
-		var bufLength = buf.length;
-		var packetResult;
-
-		var addSimulatedDelay = false;
-		if (isFileInput) {
-			addSimulatedDelay = isFileInput;
-		}
-
-		// Loop and keep emitting until done
-		while (buf.length > 0) {
-
-			packetResult = getComPacket(buf);
-
-			if (addSimulatedDelay) {
-				setTimeout(function (packet) {
-					emitPacket(emitter, packet);
-				}, 500, packetResult);
-			} else {
-				emitPacket(emitter, packetResult);
-			}
-			buf = buf.slice(packetResult.index + packetResult.packet.length);
-		}
-		logger.log('debug', 'Done parsing buffer');
-	};
 }
 
 function emitPacket(emitter, packetResult) {
@@ -183,5 +191,5 @@ module.exports = {
 
 	nextSyncByteIndex: nextSyncByteIndex,
 	getComPacket: getComPacket,
-	parser: parser
+	parser: parseData
 };

@@ -85,7 +85,8 @@ describe('Parser tests', function () {
 			});
 
 			var buffer = new Buffer(testData);
-			var parser = parsers.parser(true)(eventEmitter, buffer);
+			parsers.isFileInput = true;
+			var parser = parsers.parser(eventEmitter, buffer);
 		});
 	});
 	describe('Single packet decode', function () {
