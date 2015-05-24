@@ -14,11 +14,13 @@ var Mm3Packet = require('./mm3_packet');
 var _gSyncBytes = [0x0A, 0x05];
 var _gCurrentSyncByte = undefined;
 
-var isFileInput = false;
-
 function isUndefined(variable) {
 	return !!(typeof variable === 'undefined' || variable === null);
 
+}
+
+function nextSyncByte() {
+	return (_gCurrentSyncByte === _gSyncBytes[0]) ? _gSyncBytes[1] : _gSyncBytes[0];
 }
 
 /** Returns the index of the byte of found in the buffer, -1 otherwise
@@ -116,8 +118,7 @@ function nextSyncByteIndex(buffer) {
 			syncByte = 0x05;
 		}
 		else {
-			logger.log('warn', "Could not find sync byte in stream");
-			throw new Error("Could not find sync byte in stream");
+			return {index: -1};
 		}
 		_gCurrentSyncByte = syncByte;
 		result = {index: byteIndex, syncByte: syncByte};
@@ -134,42 +135,29 @@ function nextSyncByteIndex(buffer) {
 
 function getComPacket(buffer) {
 	var scanResults = nextSyncByteIndex(buffer);
+
+	if (!isValidPacket(buffer, scanResults)) {
+		return {valid: false};
+	}
+
 	var x = indexOf(buffer, scanResults.index);
 	var packet = buffer.slice(x, x + buffer[x + 1]);
 
-	return {index: x, packet: packet, syncByte: scanResults.syncByte};
+	return {valid: true, index: x, packet: packet, syncByte: scanResults.syncByte};
 }
 
 
-var parseData = function (emitter, buffer) {
+function isValidPacket(buffer, scanResults) {
 
-	console.log("buffer received");
-
-	var buf = buffer.slice();
-	var bufLength = buf.length;
-	var packetResult;
-
-	var addSimulatedDelay = false;
-	if (isFileInput) {
-		addSimulatedDelay = isFileInput;
+	// Don't proceed unless we find a sync byte
+	if (scanResults.index === -1) {
+		return false;
 	}
+	var len = buffer[scanResults.index + 1];
+	var syncByte = buffer[scanResults.index + len];
 
-	// Loop and keep emitting until done
-	while (buf.length > 0) {
-
-		packetResult = getComPacket(buf);
-
-		if (addSimulatedDelay) {
-			setTimeout(function (packet) {
-				emitPacket(emitter, packet);
-			}, 500, packetResult);
-		} else {
-			emitPacket(emitter, packetResult);
-		}
-		buf = buf.slice(packetResult.index + packetResult.packet.length);
-	}
-	logger.log('debug', 'Done parsing buffer');
-};
+	return syncByte === nextSyncByte() ;
+}
 
 /**
  *
@@ -178,8 +166,49 @@ var parseData = function (emitter, buffer) {
  * @returns {Function}
  */
 function parser(isFileInput) {
-	return parseData;
 
+	var buf = new Buffer(0);
+
+	return function (emitter, buffer) {
+
+		buf = Buffer.concat([buf, buffer], buf.length + buffer.length);
+
+		if(buf.length > 150) {
+			console.log(buf.length);
+			console.log(buf);
+
+		}
+
+		var packetResult;
+
+		var addSimulatedDelay = false;
+		if (isFileInput) {
+			addSimulatedDelay = isFileInput;
+		}
+
+		// Loop and keep emitting until done
+		while (buf.length > 0) {
+
+			packetResult = getComPacket(buf);
+
+			if (packetResult.valid === false) {
+				return;
+			}
+
+
+			if (addSimulatedDelay) {
+				setTimeout(function (packet) {
+					emitPacket(emitter, packet);
+				}, 500, packetResult);
+			} else {
+				emitPacket(emitter, packetResult);
+			}
+
+			// Remove emitted bytes from buffer
+			buf = buf.slice(packetResult.index + packetResult.packet.length);
+		}
+		logger.log('debug', 'Done parsing buffer');
+	};
 }
 
 function emitPacket(emitter, packetResult) {
@@ -191,5 +220,5 @@ module.exports = {
 
 	nextSyncByteIndex: nextSyncByteIndex,
 	getComPacket: getComPacket,
-	parser: parseData
+	parser: parser
 };

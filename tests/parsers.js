@@ -67,8 +67,37 @@ describe('Parser tests', function () {
 		eventEmitter = new EventEmitter();
 	});
 
+	describe('Find beginning of random stream on com packet at a time', function (done) {
+		it('should emit 15 packets', function (done) {
+
+			eventEmitter.addListener('data', function (packet) {
+				//console.log("event received: " + packet.length());
+				counter++;
+				if (counter === 1) {
+					expect(packet.length()).to.equal(13);
+					expect(packet.isValid).to.be.true;
+				} else if (counter > 1 && counter < 15) {
+					expect(packet.length()).to.equal(39);
+					expect(packet.isValid).to.be.true;
+				} else {
+					done();
+				}
+			});
+
+			var p = parsers.parser(false);
+			var buffer = new Buffer(testData);
+			for(var x = 0; x < testData.length; x++){
+				var singleBuff = new Buffer(1);
+				singleBuff[0] = buffer[x];
+
+				p(eventEmitter, singleBuff);
+			}
+
+		});
+	});
+
 	describe('Find beginning of random stream', function (done) {
-		it('should emit 16 packets', function (done) {
+		it('should emit 15 packets', function () {
 
 			eventEmitter.addListener('data', function (packet) {
 				//console.log("event received: " + packet.length());
@@ -85,8 +114,7 @@ describe('Parser tests', function () {
 			});
 
 			var buffer = new Buffer(testData);
-			parsers.isFileInput = true;
-			var parser = parsers.parser(eventEmitter, buffer);
+			var parser = parsers.parser(true)(eventEmitter, buffer);
 		});
 	});
 	describe('Single packet decode', function () {
@@ -103,8 +131,6 @@ describe('Parser tests', function () {
 
 		});
 	});
-
-	//getAsBarGraphData
 
 });
 
