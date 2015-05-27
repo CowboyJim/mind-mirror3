@@ -30,7 +30,8 @@ var logger = require('winston');
  * @type {string[]}
  * @private
  */
-var _gLabelValues = ['38', '30', '24', '19', '15', '12.5', '10.5', '9', '7.5', '6', '4.5', '3', '1.5', '0.75', 'EMG'];
+var _gLabelValues = ['EMG', '0.75', '1.5', '3', '4.5', '6', '7.5', '9', '10.5', '12.5', '15', '19', '24', '30', '38'];
+
 /**
  *
  * Creates a new MM3Packet for consumption by UI and data analysis components
@@ -48,7 +49,7 @@ var MM3Packet = function (packet) {
 	// Validate packet size
 	if (packet.length !== packet[1]) {
 		logger.warn("Invalid packet! Expected packet size does not equal the actual packet size. Expected: "
-		+ packet[1]  + " found: " + packet.length);
+			+ packet[1] + " found: " + packet.length);
 		this.isValid = false;
 	}
 	//TODO  Validate checksum
@@ -168,27 +169,31 @@ function toArrayBuffer(buffer) {
  * @returns {{key: string, color: string, values: Array}[]}
  */
 MM3Packet.prototype.getAsBarGraphData = function () {
-
-	var leftdata = this.packet.slice(9,24);
-	var rightdata = this.packet.slice(24);
-
-//	var leftdata = toArrayBuffer(this.packet.slice(9,24));
-//	var rightdata = toArrayBuffer(this.packet.slice(24));
-
 	return [
 		{
-			'key': 'left',
-			'color': '#d62728',
-			values: leftdata
+			key: 'left',
+			color: '#d62728',
+			values: getGraphJsonData(this.packet.slice(9, 24), true)
 		},
 		{
-			'key': 'right',
-			'color': '#1f77b4',
-			values: rightdata
+			key: 'right',
+			color: '#1f77b4',
+			values: getGraphJsonData(this.packet.slice(24), false)
 		}
 	];
 };
 
+function getGraphJsonData(dataArray, multiplyByNeg1) {
+	var values = [];
+	for (var i = 0; i < dataArray.length; i++) {
+		var value = dataArray[i];
+		if(multiplyByNeg1 === true){
+			value = value * -1;
+		}
+		values.push([_gLabelValues[i], value]);
+	}
+	return values.reverse();
+}
 
 
 module.exports = MM3Packet;

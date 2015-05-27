@@ -70,8 +70,7 @@ describe('Parser tests', function () {
 	describe('Find beginning of random stream on com packet at a time', function (done) {
 		it('should emit 15 packets', function (done) {
 
-			eventEmitter.addListener('data', function (packet) {
-				//console.log("event received: " + packet.length());
+			eventEmitter.addListener('mm3Packet', function (packet) {
 				counter++;
 				if (counter === 1) {
 					expect(packet.length()).to.equal(13);
@@ -100,7 +99,6 @@ describe('Parser tests', function () {
 		it('should emit 15 packets', function () {
 
 			eventEmitter.addListener('data', function (packet) {
-				//console.log("event received: " + packet.length());
 				counter++;
 				if (counter === 1) {
 					expect(packet.length()).to.equal(13);

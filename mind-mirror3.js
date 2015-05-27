@@ -31,23 +31,24 @@ function MindMirror3Factory() {
 		databits: 8,
 		stopbits: 1,
 		buffersize: 256,
-		parser: parser.parser
+		parser: parser.parser()
 	};
 
 	function MindMirror3(comPort) {
 
-		 var self = this;
+		var self = this;
+		this.serialPort;
+		this.portId;
 
-		var portId = (comPort === undefined || comPort === null) ? _options.portId : comPort;
-		var serialPort = new SerialPort(portId, _options, false);
+		function connectTo(portId){
+			this.portId = (portId === undefined || portId === null) ? _options.portId : portId;
+			this.serialPort = new SerialPort(this.portId, _options, false);
+			return self;
+		}
 
-		//	this.options.parser = parser.parser;
-		//SerialPort.call(this.portId, _options, false);
+		function open(callback) {
 
-
-		function connect() {
-
-			serialPort.open(function (error) {
+			self.serialPort.open(function (error) {
 				var mm3, buffer;
 
 				if (error) {
@@ -55,7 +56,12 @@ function MindMirror3Factory() {
 					return;
 				}
 				console.log("Successfully connected to " + self.portId);
-				serialPort.on('data', function (data) {
+
+				if(typeof callback === 'defined'){
+					self.serialPort.on('data', callback);
+				}
+
+/*				self.serialPort.on('data', function (data) {
 					//buffer = new Buffer(data,'binary');
 					//console.log(buffer.length);
 					console.log(buffer.toString());
@@ -63,18 +69,23 @@ function MindMirror3Factory() {
 
 					console.log(Math.floor(Date.now() / 100));
 					//console.log(mm3.toString());
-				});
-				serialPort.on('close', function (data) {
+				});*/
+				self.serialPort.on('close', function (data) {
 					console.log("Close event received: " + data);
 				});
-				serialPort.on('error', function (error) {
+				self.serialPort.on('error', function (error) {
 					console.log("Error event received: " + error);
 				});
 			});
 		}
 
-		this.connect = connect;
+		function addListener(messageId,listener){
+			return self.serialPort.addListener(messageId,listener);
+		}
 
+		this.connectTo = connectTo;
+		this.open = open;
+		this.addListener = addListener;
 
 	}
 

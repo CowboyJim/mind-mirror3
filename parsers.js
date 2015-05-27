@@ -173,12 +173,6 @@ function parser(isFileInput) {
 
 		buf = Buffer.concat([buf, buffer], buf.length + buffer.length);
 
-		if(buf.length > 150) {
-			console.log(buf.length);
-			console.log(buf);
-
-		}
-
 		var packetResult;
 
 		var addSimulatedDelay = false;
