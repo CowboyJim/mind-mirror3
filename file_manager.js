@@ -9,36 +9,45 @@ var path = require('path');
 var log = require('winston');
 
 var mkdirp = require('mkdirp');
-var baseDir = __dirname + "/capture";
+
+var g_baseDir;
 var g_eventToListenFor = 'data';
 
 var fileOutStream;
+
+var count = 0;
+
+var eventListener = function(data){
+	fileOutStream.write(data);
+}
 
 /**
  *
  * @param emitter
  * @param fileName
  */
-function startCaptureToFile(emitter,fileName) {
+function startCaptureToFile(emitter, fileName) {
 
-	mkdirp(baseDir,function(err){
-		if(err){
-			log.error(err);
-		}
-	});
-	var newFileName = getNewFileName(fileName);
-	fileOutStream = fs.createWriteStream(newFileName);
-	emitter.addEventListener(g_eventToListenFor,function(data){
-		fileOutStream.write(data);
-	});
+	var fName;
+	if (typeof fileName === 'undefined') {
+		fName = getNewFileName(fileName);
+	} else {
+		fName = fileName;
+	}
+
+	fileOutStream = fs.createWriteStream(fName);
+	emitter.addListener(g_eventToListenFor, eventListener);
 }
+
 /**
  *
  * @param emitter
  */
 function stopCaptureToFile(emitter) {
-	emitter.removeListener(g_eventToListenFor);
-	fileOutStream.end();
+	fileOutStream.end(function(){
+		log.debug("end capture");
+	});
+	emitter.removeListener('data',eventListener);
 }
 
 /**
@@ -50,26 +59,68 @@ function getNewFileName(fileName) {
 
 	var name = fileName;
 	if (typeof fileName == 'undefined') {
-		name = getFormatedDate() + ".capture.mm3";
+		name = getFormatedDate() + ".mm3";
 	}
-	return name;
+	return getBaseDir() + "/" + name;
 }
 
 function getFormatedDate() {
 	var d = new Date(),
 		month = '' + (d.getMonth() + 1),
 		day = '' + d.getDate(),
-		year = d.getFullYear();
+		year = d.getFullYear(),
+		hours = d.getHours(),
+		secs = d.getSeconds();
 
 	if (month.length < 2) month = '0' + month;
 	if (day.length < 2) day = '0' + day;
 
-	return [year, month, day].join('-');
+	return [month, day, year, hours, secs].join('-');
+}
+
+
+function getBaseDir() {
+
+	if (typeof g_baseDir === 'undefined') {
+		// Create the base dir if it doesn't already exist
+		g_baseDir = (process.env.HOME || process.env.USERPROFILE) + "/mm3Data";
+		mkdirp(g_baseDir, function (err) {
+			if (err) {
+				log.error(err);
+			}
+		});
+	}
+	return g_baseDir;
+}
+
+
+function getFileList(dir) {
+
+	var result = [];
+	var files = fs.readdirSync(dir);
+	for (var x in files) {
+		var fqn = path.join(dir, files[x]);
+		if (!fs.statSync(fqn).isDirectory()) {
+			result.push(files[x]);
+		}
+	}
+	return result;
+}
+
+function waitOnWriteToComplete(callback){
+
+	fileOutStream.on('finish', function() {
+		log.debug('All writes are now complete.');
+		callback.call();
+	});
 }
 
 module.exports = {
 
 	startCaptureToFile: startCaptureToFile,
 	stopCaptureToFile: stopCaptureToFile,
-	getNewFileName: getNewFileName
-}
+	getNewFileName: getNewFileName,
+	getFileList: getFileList,
+	getBaseDir: getBaseDir,
+	waitOnWriteToComplete : waitOnWriteToComplete
+};
