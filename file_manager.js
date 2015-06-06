@@ -107,13 +107,18 @@ function getFileList(dir) {
 	return result;
 }
 
-function waitOnWriteToComplete(callback){
+function waitOnWriteToComplete(callback,arg){
 
 	fileOutStream.on('finish', function() {
 		log.debug('All writes are now complete.');
-		callback.call();
+		callback.call(arg);
 	});
 }
+
+function deleteFile(filename){
+	fs.unlinkSync(path.join(getBaseDir(), filePath));
+};
+
 
 module.exports = {
 
@@ -122,5 +127,6 @@ module.exports = {
 	getNewFileName: getNewFileName,
 	getFileList: getFileList,
 	getBaseDir: getBaseDir,
-	waitOnWriteToComplete : waitOnWriteToComplete
+	waitOnWriteToComplete : waitOnWriteToComplete,
+	deleteFile: deleteFile
 };

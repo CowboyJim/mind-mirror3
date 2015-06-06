@@ -6,6 +6,7 @@
 var fm = require('../file_manager');
 var expect = require("chai").expect;
 var EventEmitter = require('events').EventEmitter;
+var fs = require("fs");
 
 var testData =
 	[0x3f, 0x0a, 0x0d, 0x3f, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x0a, 0x0d, 0x53, 0x79, 0x73,
@@ -56,19 +57,6 @@ describe('File manager', function () {
 	describe('Test file creation', function (done) {
 		it('should treat com port ID correctly', function (done) {
 
-			var counter = 0;
-			eventEmitter.addListener('data', function (packet) {
-
-				counter+= packet.length;
-				if(counter >= 576){
-				//	fm.stopCaptureToFile(eventEmitter);
-				//	console.log('done');
-
-					//done();
-				}
-
-			});
-
 			var fileName = fm.getNewFileName();
 			console.log(fileName);
 			fm.startCaptureToFile(eventEmitter, fileName);
@@ -84,11 +72,30 @@ describe('File manager', function () {
 			console.log(buff.length);
 			fm.stopCaptureToFile(eventEmitter);
 
-			fm.waitOnWriteToComplete(done);
+
+			var verifyFile = function(done){
+
+				var stats = fs.statSync(fileName);
+
+				console.log(fileName);
+
+				expect(stats['size']).to.equal(576);
+
+/*
+				var vf = fs.open(fileName, function(err, fd){
+
+				});
+*/
+
+				done();
+			};
+
+			fm.waitOnWriteToComplete(verifyFile, done);
 
 
 
-			//console.log(fm.getFileList("/Users/jim"));
+
+
 
 
 		});

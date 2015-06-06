@@ -32,6 +32,80 @@ var logger = require('winston');
  */
 var _gLabelValues = ['EMG', '0.75', '1.5', '3', '4.5', '6', '7.5', '9', '10.5', '12.5', '15', '19', '24', '30', '38'];
 
+// left = 9-24
+// right = 24 -
+var _gLeftIndexMap = {
+	'EMG': 9,
+	'0.75': 10,
+	'1.5': 11,
+	'3': 12,
+	'4.5': 13,
+	'6': 14,
+	'7.5': 15,
+	'9': 16,
+	'10.5': 17,
+	'12.5': 18,
+	'15': 19,
+	'19': 20,
+	'24': 21,
+	'30': 22,
+	'38': 23
+};
+var _gLeftIndexExcelMap = {
+	'B': 9,
+	'C': 10,
+	'D': 11,
+	'E': 12,
+	'F': 13,
+	'G': 14,
+	'H': 15,
+	'I': 16,
+	'J': 17,
+	'K': 18,
+	'L': 19,
+	'M': 20,
+	'N': 21,
+	'O': 22,
+	'P': 23
+};
+
+var _gRightIndexMap = {
+	'EMG': 24,
+	'0.75': 25,
+	'1.5': 26,
+	'3': 27,
+	'4.5': 28,
+	'6': 29,
+	'7.5': 30,
+	'9': 31,
+	'10.5': 32,
+	'12.5': 33,
+	'15': 34,
+	'19': 35,
+	'24': 36,
+	'30': 37,
+	'38': 38
+};
+
+var _gRightIndexExcelMap = {
+	'Q': 24,
+	'R': 25,
+	'S': 26,
+	'T': 27,
+	'U': 28,
+	'V': 29,
+	'W': 30,
+	'X': 31,
+	'Y': 32,
+	'Z': 33,
+	'AA': 34,
+	'AB': 35,
+	'AC': 36,
+	'AD': 37,
+	'AE': 38
+};
+
+
 /**
  *
  * Creates a new MM3Packet for consumption by UI and data analysis components
@@ -45,6 +119,9 @@ var _gLabelValues = ['EMG', '0.75', '1.5', '3', '4.5', '6', '7.5', '9', '10.5', 
 var MM3Packet = function (packet) {
 	this.packet = packet;
 	this.isValid = true;
+
+	// Expose the maps
+	this.leftIndexMap = _gLeftIndexMap;
 
 	// Validate packet size
 	if (packet.length !== packet[1]) {
@@ -187,7 +264,7 @@ function getGraphJsonData(dataArray, multiplyByNeg1) {
 	var values = [];
 	for (var i = 0; i < dataArray.length; i++) {
 		var value = dataArray[i];
-		if(multiplyByNeg1 === true){
+		if (multiplyByNeg1 === true) {
 			value = value * -1;
 		}
 		values.push([_gLabelValues[i], value]);
@@ -195,5 +272,22 @@ function getGraphJsonData(dataArray, multiplyByNeg1) {
 	return values.reverse();
 }
 
+
+MM3Packet.prototype.getLeftFrequencyValue = function (value, freqCol) {
+
+	if (typeof freqCol !== 'undefined') {
+		return _gLeftIndexMap.value;
+	}
+	return _gLeftIndexExcelMap.value;
+
+}
+
+MM3Packet.prototype.getRightFrequencyValue = function (value, freqCol) {
+
+	if (typeof freqCol !== 'undefined') {
+		return _gRightIndexMap.value;
+	}
+	return _gRightIndexExcelMap.value;
+}
 
 module.exports = MM3Packet;
