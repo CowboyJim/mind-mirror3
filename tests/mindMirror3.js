@@ -28,7 +28,6 @@ describe('Parser tests', function () {
 			//expect(mm3.serialPort.path).to.equal(portId);
 			//expect(mm3.serialPort.isOpen()).to.be.true;
 
-
 		});
 	});
 /*

@@ -70,7 +70,7 @@ describe('Parser tests', function () {
 	describe('Find beginning of random stream on com packet at a time', function (done) {
 		it('should emit 15 packets', function (done) {
 
-			eventEmitter.addListener('mm3Packet', function (packet) {
+			eventEmitter.addListener('data', function (packet) {
 				counter++;
 				if (counter === 1) {
 					expect(packet.length()).to.equal(13);
@@ -116,7 +116,7 @@ describe('Parser tests', function () {
 		});
 	});
 	describe('Single packet decode', function () {
-		it('should create JSON for plotting bar graphs', function () {
+		it('should create JSON for plotting bar graphs and table data', function () {
 
 			var packet = new Mm3Packet(new Buffer(singleDataPacket));
 			expect(packet.length()).to.equal(39);
@@ -125,6 +125,10 @@ describe('Parser tests', function () {
 			var graphData = packet.getAsBarGraphData();
 			expect(graphData[0].values).to.have.length(15);
 			expect(graphData[1].values).to.have.length(15);
+
+			var result = packet.getChannelData();
+			expect(result.length).to.equal(30);
+			//console.log(result);
 
 
 		});

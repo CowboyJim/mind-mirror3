@@ -32,6 +32,8 @@ var logger = require('winston');
  */
 var _gLabelValues = ['EMG', '0.75', '1.5', '3', '4.5', '6', '7.5', '9', '10.5', '12.5', '15', '19', '24', '30', '38'];
 
+var _gSequence = 0;
+
 // left = 9-24
 // right = 24 -
 var _gLeftIndexMap = {
@@ -119,6 +121,7 @@ var _gRightIndexExcelMap = {
 var MM3Packet = function (packet) {
 	this.packet = packet;
 	this.isValid = true;
+	_gSequence = _gSequence + 1;
 
 	// Expose the maps
 	this.leftIndexMap = _gLeftIndexMap;
@@ -231,13 +234,21 @@ function decimalToHex(d, padding, base) {
 	return hex;
 }
 
-function toArrayBuffer(buffer) {
-	var ab = new ArrayBuffer(buffer.length);
-	var view = new Uint8Array(ab);
-	for (var i = 0; i < buffer.length; ++i) {
-		view[i] = buffer[i];
+/**
+ *
+ */
+MM3Packet.prototype.getChannelData = function () {
+
+	var values = [];
+	values.push(_gSequence);
+	var buffer = this.packet.slice(9);
+	for (var i = 0; i < buffer.length; i++) {
+		var value = buffer[i];
+		values.push(value);
 	}
-	return ab;
+	console.log(values.length);
+
+	return values;
 }
 
 /**
@@ -271,7 +282,6 @@ function getGraphJsonData(dataArray, multiplyByNeg1) {
 	}
 	return values.reverse();
 }
-
 
 MM3Packet.prototype.getLeftFrequencyValue = function (value, freqCol) {
 
